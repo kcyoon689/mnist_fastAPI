@@ -143,11 +143,11 @@ def plotly_plot_scores(val_acc):
 
 
 if __name__ == "__main__":
-    train_loader, val_loader, test_loader = get_dataloader(64, 10000)
+    train_loader, val_loader, test_loader = get_dataloader(128, 10000)
 
     for images, labels in train_loader:
-        # print(images[0].shape, labels[0])
-        img = images[0].squeeze().numpy()
+        print(images[60].shape, labels[60])
+        img = images[60].squeeze().numpy()
         fig = px.imshow(img, color_continuous_scale="gray")
-        fig.show()
+        fig.write_image("./samples/sample_image.png")
         break

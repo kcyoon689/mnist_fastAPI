@@ -2,7 +2,7 @@ import torch
 import torchvision.transforms as transforms
 from PIL import Image
 import argparse
-import model  # model.py에서 정의된 모델을 불러옵니다.
+import model
 import random
 from utils import get_dataloader
 
@@ -10,7 +10,6 @@ from utils import get_dataloader
 # parser.add_argument('--image_path', type=str, default='./sample_image.png', required=True, help='Path to the input image')
 # args = parser.parse_args()
 
-# 이미지 전처리 파이프라인 정의
 transform = transforms.Compose(
     [
         transforms.Grayscale(num_output_channels=1),
@@ -24,7 +23,6 @@ transform = transforms.Compose(
 def predict(image_path, model_path="./weights/model.pth"):
     image = Image.open(image_path)
     image = transform(image).unsqueeze(0)
-
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_instance = model.MnistModel().to(device)
@@ -44,7 +42,7 @@ def predict(image_path, model_path="./weights/model.pth"):
 
 
 if __name__ == "__main__":
-    image_path = "./sample_image.png"
+    image_path = "./samples/sample_image.png"
     prediction, confidence = predict(image_path)
     print(f"Predicted digit: {prediction}")
     print(f"Confidence: {confidence[prediction]}%")
