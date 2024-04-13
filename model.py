@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torchsummary import summary
 
-class MnistModel(MnistModelBase):
-    """Feedfoward neural network with 2 hidden layer"""
+class CNN(nn.Module):
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Sequential(
@@ -70,7 +70,6 @@ class MnistModel(MnistModelBase):
             nn.Conv2d(16,10,1),   #RF - 20x20  #output- 7x7
         )
 
-
     def forward(self, xb):
         x = self.conv1(xb)
         x = self.trans1(x)
@@ -81,3 +80,10 @@ class MnistModel(MnistModelBase):
 
         x = x.view(-1, 10)
         return x
+
+# Print Summary of the model
+if __name__ == "__main__":
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = CNN().to(device)
+    summary(model, input_size=(1, 28, 28))
+    print(model)
