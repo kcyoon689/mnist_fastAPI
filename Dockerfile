@@ -30,8 +30,8 @@ RUN apt-get -qq update \
     && python3 -m pip install mlflow \
     && python3 -m pip install plotly \
     && python3 -m pip install matplotlib \
-	&& python3 -m pip install torchsummary
-    # && python3 -m pip install imutils \
+	&& python3 -m pip install torchsummary \
+    && python3 -m pip install kaleido 
     # && python3 -m pip install scipy \
     # && python3 -m pip install scikit-learn \
     # && python3 -m pip install tqdm \
