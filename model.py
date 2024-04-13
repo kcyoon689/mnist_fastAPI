@@ -5,7 +5,7 @@ from trainer import MnistModelBase
 from torchsummary import summary
 
 
-class MnistModel(MnistModelBase):  # MnistModelBase로부터 상속
+class MnistModel(MnistModelBase):
     def __init__(self):
         super().__init__()
         self.conv1 = nn.Sequential(
