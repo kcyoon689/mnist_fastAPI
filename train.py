@@ -2,53 +2,13 @@ import argparse
 import model
 import torch
 from torch.optim.lr_scheduler import OneCycleLR
-import plotly.graph_objects as go
-from utils import get_dataloader
-from utils import makedirs
-from utils import plotly_plot_losses, plotly_plot_scores
+from utils import get_dataloader, makedirs, plotly_plot_losses, plotly_plot_scores
 import datetime
 from datetime import timezone, timedelta
 import mlflow
 
 
-# argparse를 사용하여 명령줄 인수를 파싱
-parser = argparse.ArgumentParser(description="Train a model on MNIST dataset.")
-parser.add_argument(
-    "--lr", type=int, default=0.01, help="learning_rate for training (default: 0.01)"
-)
-parser.add_argument(
-    "--batch_size",
-    type=int,
-    default=128,
-    help="input batch size for training (default: 64)",
-)
-parser.add_argument(
-    "--val_size",
-    type=int,
-    default=10000,
-    help="size of validation dataset (default: 10000)",
-)
-parser.add_argument(
-    "--n_epochs", type=int, default=10, help="number of epochs to train (default: 10)"
-)
-args = parser.parse_args()
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-train_loader, val_loader, test_loader = get_dataloader(args.batch_size, args.val_size)
-
-# MLflow 실험 시작
-mlflow.start_run()
-mlflow.log_params(
-    {
-        "learning_rate": args.lr,
-        "batch_size": args.batch_size,
-        "validation_size": args.val_size,
-        "epochs": args.n_epochs,
-    }
-)
-
-
-def fit(epochs, lr, model, train_loader, val_loader, opt_func=torch.optim.SGD):
+def fit(epochs, lr, model, train_loader, val_loader, device, opt_func=torch.optim.SGD):
     torch.cuda.empty_cache()
     history = []
     train_loss = []
@@ -56,31 +16,34 @@ def fit(epochs, lr, model, train_loader, val_loader, opt_func=torch.optim.SGD):
     val_acc = []
     optimizer = opt_func(model.parameters(), lr)
     scheduler = OneCycleLR(
-        optimizer, lr, epochs=epochs, steps_per_epoch=len(train_loader)
+        optimizer, max_lr=lr, epochs=epochs, steps_per_epoch=len(train_loader)
     )
 
     for epoch in range(epochs):
-        # Training Phase
         model.train()
         train_losses = []
+
         for batch in train_loader:
             images, labels = batch
             images, labels = images.to(device), labels.to(device)
+            optimizer.zero_grad()
             loss = model.training_step((images, labels))
-            train_losses.append(loss)
             loss.backward()
             optimizer.step()
-            optimizer.zero_grad()
             scheduler.step()
+            train_losses.append(loss.item())
 
-        # Validation phase
-        result = evaluate(model, val_loader)
-        result["train_loss"] = torch.stack(train_losses).mean().item()
-        model.epoch_end(epoch, result, [scheduler.get_last_lr()[0]])
+        result = evaluate(model, val_loader, device)
+        result["train_loss"] = sum(train_losses) / len(train_losses)
+
         history.append(result)
+
         train_loss.append(result["train_loss"])
         val_loss.append(result["val_loss"])
         val_acc.append(result["val_acc"])
+        print(
+            f'Epoch [{epoch+1}/{epochs}], Train Loss: {result["train_loss"]:.4f}, Val Loss: {result["val_loss"]:.4f}, Val Acc: {result["val_acc"]:.4f}'
+        )
 
         # MLflow에 메트릭 로깅
         mlflow.log_metrics(
@@ -96,38 +59,59 @@ def fit(epochs, lr, model, train_loader, val_loader, opt_func=torch.optim.SGD):
 
 
 @torch.no_grad()
-def evaluate(model, val_loader):
+def evaluate(model, val_loader, device):
     model.eval()
-    val_losses = []
-    for batch in val_loader:
-        images, labels = batch
-        images, labels = images.to(device), labels.to(
-            device
-        )  # 데이터를 모델의 디바이스로 이동
-        output = model.validation_step(
-            (images, labels)
-        )  # 수정: 배치 데이터를 튜플로 전달
-        val_losses.append(output)
-    return model.validation_epoch_end(val_losses)
+    # outputs = [model.validation_step(batch.to(device)) for batch in val_loader]
+    outputs = [
+        model.validation_step((images.to(device), labels.to(device)))
+        for images, labels in val_loader
+    ]
+    return model.validation_epoch_end(outputs)
 
 
-if __name__ == "__main__":
-    model_instance = model.MnistModel().to(device)
-    history, train_loss, val_loss, val_acc = fit(
-        args.n_epochs, args.lr, model_instance, train_loader, val_loader
+def train_model(args_dict: dict):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    train_loader, val_loader, test_loader = get_dataloader(
+        args_dict.get("batch_size"), args_dict.get("val_size")
     )
 
-    # plot losses and accuracy
+    if mlflow.active_run():
+        mlflow.end_run()
+
+    # MLflow 시작
+    mlflow.start_run()
+    mlflow.log_params(
+        {
+            "learning_rate": args_dict.get("lr"),
+            "batch_size": args_dict.get("batch_size"),
+            "validation_size": args_dict.get("val_size"),
+            "epochs": args_dict.get("n_epochs"),
+        }
+    )
+
+    model_instance = model.MnistModel().to(device)
+    history, train_loss, val_loss, val_acc = fit(
+        args_dict.get("n_epochs"),
+        args_dict.get("lr"),
+        model_instance,
+        train_loader,
+        val_loader,
+        device,
+    )
+
     plotly_plot_losses(train_loss, val_loss)
     plotly_plot_scores(val_acc)
 
     # test the model
-    result = evaluate(model_instance, test_loader)
-    print(result)
-    print(result["val_loss"], result["val_acc"])
+    test_result = evaluate(model_instance, test_loader, device)
+    print(
+        f'Test Loss: {test_result["val_loss"]:.4f}, Test Acc: {test_result["val_acc"]:.4f}'
+    )
 
     # MLflow에 테스트 결과 로깅
-    mlflow.log_metrics({"test_loss": result["val_loss"], "test_acc": result["val_acc"]})
+    mlflow.log_metrics(
+        {"test_loss": test_result["val_loss"], "test_acc": test_result["val_acc"]}
+    )
 
     # save the model
     save_path = "./weights/"
@@ -136,15 +120,56 @@ if __name__ == "__main__":
     # UTC to KST(UTC+9)
     kst_time = datetime.datetime.now(timezone.utc) + timedelta(hours=9)
     current_time_kst = kst_time.strftime("%y%m%d_%H%M%S")
-    epochs = args.n_epochs
-    file_name = f"model_{epochs}epochs_{current_time_kst}.pth"
+    file_name = f"model_{args_dict.get('n_epochs')}epochs_{current_time_kst}.pth"
     torch.save(model_instance.state_dict(), save_path + file_name)
-    print(f"'{file_name}' save!")
+    print(f"'{file_name}' saved!")
 
-    # MLflow에 모델 저장
+    # MLflow에 모델 저장 및 등록
+    # model_name = "MNIST_Model"
     mlflow.pytorch.log_model(model_instance, "model")
+    # mlflow.pytorch.log_model(model_instance, "model", registered_model_name=model_name)
 
     # MLflow 실행 종료
     mlflow.end_run()
 
     print("Training completed.")
+
+    return train_loss, val_loss, val_acc
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Train a model on MNIST dataset.")
+    parser.add_argument(
+        "--lr",
+        type=float,
+        default=0.01,
+        help="learning rate for training (default: 0.01)",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=128,
+        help="input batch size for training (default: 128)",
+    )
+    parser.add_argument(
+        "--val_size",
+        type=int,
+        default=10000,
+        help="proportion of dataset to use for validation (default: 0.2)",
+    )
+    parser.add_argument(
+        "--n_epochs",
+        type=int,
+        default=10,
+        help="number of epochs to train (default: 10)",
+    )
+
+    args = parser.parse_args()
+    return args
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    args_dict = vars(args)
+    # print(args_dict)
+    train_model(args_dict)
