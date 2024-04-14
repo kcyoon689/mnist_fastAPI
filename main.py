@@ -3,16 +3,16 @@ from fastapi import FastAPI, HTTPException, File, UploadFile
 from pydantic import BaseModel
 import uvicorn
 from typing import Optional
-from model import MnistModel
-from train import train_model
-from utils import (
+from modules.model import MnistModel
+from modules.train import train_model
+from modules.utils import (
     setup_logging,
     setup_experiment_tracking,
     plotly_plot_losses,
     plotly_plot_scores,
 )
 import mlflow.pytorch
-from prediction import predict
+from modules.prediction import predict
 import numpy as np
 from PIL import Image
 from io import BytesIO
@@ -92,6 +92,7 @@ async def train(train_request: TrainRequest):
             "val_loss": val_loss,
             "val_acc": val_acc,
         }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
