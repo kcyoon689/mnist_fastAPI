@@ -7,6 +7,8 @@ from torch.utils.data.dataloader import DataLoader
 import plotly.express as px
 import plotly.graph_objects as go
 import os
+import logging
+import uuid
 
 
 def get_dataloader(batch_size, val_size):
@@ -73,6 +75,18 @@ def get_dataloader(batch_size, val_size):
     )
 
     return train_loader, val_loader, test_loader
+
+
+def setup_logging():
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+
+
+def setup_experiment_tracking():
+    # 실험 ID를 UUID로 생성
+    experiment_id = str(uuid.uuid4())
+    return experiment_id
 
 
 def makedirs(path):
@@ -145,9 +159,12 @@ def plotly_plot_scores(val_acc):
 if __name__ == "__main__":
     train_loader, val_loader, test_loader = get_dataloader(128, 10000)
 
+    save_path = "./samples/"
+    makedirs(save_path)
+
     for images, labels in train_loader:
         print(images[60].shape, labels[60])
         img = images[60].squeeze().numpy()
         fig = px.imshow(img, color_continuous_scale="gray")
-        fig.write_image("./samples/sample_image.png")
+        fig.write_image(os.path.join(save_path, "sample_image.png"))
         break
