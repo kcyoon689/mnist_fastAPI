@@ -20,9 +20,10 @@ transform = transforms.Compose(
 )
 
 
-def predict(image_path, model_path="./weights/model.pth"):
-    image = Image.open(image_path)
-    image = transform(image).unsqueeze(0)
+def predict(img: Image, model_path="./weights/model_10epochs_240414_164948.pth"):
+    # print(img_path)
+    # image = Image.open(img_path)
+    image = transform(img).unsqueeze(0)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_instance = model.MnistModel().to(device)
@@ -43,6 +44,7 @@ def predict(image_path, model_path="./weights/model.pth"):
 
 if __name__ == "__main__":
     image_path = "./samples/sample_image.png"
-    prediction, confidence = predict(image_path)
+    image = Image.open(image_path)
+    prediction, confidence = predict(image)
     print(f"Predicted digit: {prediction}")
     print(f"Confidence: {confidence[prediction]}%")
