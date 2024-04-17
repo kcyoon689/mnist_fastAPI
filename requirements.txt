@@ -1,0 +1,15 @@
+requests
+torch
+torchvision
+mlflow
+plotly
+matplotlib
+torchsummary
+kaleido
+mlflow
+fastapi
+uvicorn
+python-multipart
+onnx
+onnxruntime
+setuptools
