@@ -52,7 +52,6 @@ def root():
 @app.post("/train")
 async def post_train(train_request: TrainRequest):
     setup_logging()
-    experiment_id = setup_experiment_tracking()
 
     # 학습 파라미터
     lr = train_request.learning_rate
@@ -80,6 +79,7 @@ async def post_train(train_request: TrainRequest):
         # 새로운 MLflow 실행 시작
         with mlflow.start_run() as mlflow_run:
             train_loss, val_loss, val_acc = train_model(args, mlflow_run)
+            experiment_id = mlflow_run.info.run_id
 
         # # 학습 과정 시각화
         # plotly_plot_losses(train_loss, val_loss)
@@ -115,24 +115,17 @@ async def post_register(register_request: RegisterRequest):
         dummy_input = torch.randn(1, 1, 28, 28)
         torch.onnx.export(model_instance, dummy_input, artifact_path)
 
-        # 현재 활성화된 MLflow 실행이 있다면 종료
-        if mlflow.active_run():
-            mlflow.end_run()
+        result = mlflow.register_model(f"runs:/{experiment_id}/model", "test_model")
 
-        # 새로운 MLflow 실행 시작
-        with mlflow.start_run():
-            # mlflow.pytorch.log_model(model_instance, artifact_path)
-            mlflow.pytorch.log_model(
-                model_instance, artifact_path, registered_model_name=register_name
-            )
-
-        return JSONResponse(content={"status": "success"}, status_code=200)
+        return JSONResponse(
+            content={"status": "success", "result": result}, status_code=200
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Train a model on MNIST dataset.")
+    parser = argparse.ArgumentParser(description="Model Serving API Service.")
     parser.add_argument(
         "--host_ip",
         type=str,

@@ -1,80 +1,10 @@
+import csv
 import logging
 import os
-import torch
-import uuid
-from torchvision.datasets import MNIST
-from torchvision.transforms import ToTensor
-from torchvision import transforms
-from torch.utils.data import random_split
-from torch.utils.data.dataloader import DataLoader
-import plotly.express as px
 import plotly.graph_objects as go
 
-
-def get_dataloader(batch_size, val_size) -> tuple[DataLoader, DataLoader, DataLoader]:
-    dataset = MNIST(root="data", download=True, transform=ToTensor())
-
-    train_size = len(dataset) - val_size
-    train_ds, val_ds = random_split(dataset, [train_size, val_size])
-
-    train_loader = DataLoader(
-        train_ds, batch_size, shuffle=True, num_workers=4, pin_memory=True
-    )
-
-    train_mean = 0.0
-    train_std = 0.0
-
-    for images, _ in train_loader:
-        batch_samples = images.size(
-            0
-        )  # batch size (the last batch can have smaller size!)
-        images = images.view(batch_samples, images.size(1), -1)
-
-        train_mean += images.mean(2).sum(0)
-        train_std += images.std(2).sum(0)
-
-    train_mean /= len(train_loader)
-    train_std /= len(train_loader)
-
-    # print('Mean: ', train_mean)
-    # print('Std: ', train_std)
-
-    dataset = MNIST(
-        root="data",
-        download=True,
-        transform=transforms.Compose(
-            [
-                transforms.RandomRotation((-7.0, 7.0), fill=1),
-                transforms.ToTensor(),
-                transforms.Normalize((0.1308,), (0.3016,)),
-            ]
-        ),
-    )
-
-    test_dataset = MNIST(
-        root="data",
-        train=False,
-        transform=transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize((0.1308,), (0.3016,))]
-        ),
-    )
-
-    torch.manual_seed(1)
-
-    train_size = len(dataset) - val_size
-    train_ds, val_ds = random_split(dataset, [train_size, val_size])
-
-    # print("Train: ", len(train_ds), "Val: ", len(val_ds), "Test: ", len(test_dataset))
-
-    train_loader = DataLoader(
-        train_ds, batch_size, shuffle=True, num_workers=4, pin_memory=True
-    )
-    val_loader = DataLoader(val_ds, batch_size * 2, num_workers=4, pin_memory=True)
-    test_loader = DataLoader(
-        test_dataset, batch_size * 2, num_workers=4, pin_memory=True
-    )
-
-    return train_loader, val_loader, test_loader
+PATH_RESULTS = os.getenv("PATH_RESULTS", "results")
+os.makedirs(PATH_RESULTS, exist_ok=True)
 
 
 def setup_logging() -> None:
@@ -83,32 +13,30 @@ def setup_logging() -> None:
     )
 
 
-def setup_experiment_tracking() -> str:
-    # 실험 ID를 UUID로 생성
-    experiment_id = str(uuid.uuid4())
-    return experiment_id
+def get_metrics(csv_path: str) -> tuple[list[float], list[float], list[float]]:
+    train_loss: list[float] = []
+    val_loss: list[float] = []
+    val_acc: list[float] = []
+    with open(csv_path, "r", encoding="utf-8", newline="") as f_in:
+        reader = csv.DictReader(f_in)
+        for line in reader:
+            if line["train_loss"] != "":
+                train_loss.append(float(line["train_loss"]))
+            if line["val_loss"] != "":
+                val_loss.append(float(line["val_loss"]))
+            if line["val_acc"] != "":
+                val_acc.append(float(line["val_acc"]))
+    return train_loss, val_loss, val_acc
 
 
-def makedirs(path) -> None:
-    try:
-        if not os.path.exists(path):
-            os.makedirs(path)
-    except OSError:
-        print("Error: Creating directory of data")
-
-
-# plot_losses_and_accuracy(history)
-def plotly_plot_losses(train_loss: list, val_loss: list) -> None:
-    train_losses = train_loss
-    val_losses = val_loss
-
+def plot_losses(train_loss: list[float], val_loss: list[float]) -> None:
     fig = go.Figure()
 
     # Training losses
     fig.add_trace(
         go.Scatter(
-            x=list(range(1, len(train_losses) + 1)),
-            y=train_losses,
+            x=list(range(1, len(train_loss) + 1)),
+            y=train_loss,
             mode="lines+markers",
             name="Training",
         )
@@ -117,8 +45,8 @@ def plotly_plot_losses(train_loss: list, val_loss: list) -> None:
     # Validation losses
     fig.add_trace(
         go.Scatter(
-            x=list(range(1, len(val_losses) + 1)),
-            y=val_losses,
+            x=list(range(1, len(val_loss) + 1)),
+            y=val_loss,
             mode="lines+markers",
             name="Validation",
         )
@@ -128,22 +56,17 @@ def plotly_plot_losses(train_loss: list, val_loss: list) -> None:
         title="Loss vs. No. of epochs", xaxis_title="Epoch", yaxis_title="Loss"
     )
 
-    save_path = "results"
-    makedirs(save_path)
-    fig.write_image(os.path.join(save_path, "loss_graph.png"))
+    fig.write_image(os.path.join(PATH_RESULTS, "loss_graph.png"))
 
 
-def plotly_plot_scores(val_acc):
-    # acc = [x['val_acc'] for x in history]
-    acc = val_acc
-
+def plot_scores(val_acc: list[float]) -> None:
     fig = go.Figure()
 
     # Validation accuracy
     fig.add_trace(
         go.Scatter(
-            x=list(range(1, len(acc) + 1)),
-            y=acc,
+            x=list(range(1, len(val_acc) + 1)),
+            y=val_acc,
             mode="lines+markers",
             name="Validation Accuracy",
         )
@@ -154,20 +77,11 @@ def plotly_plot_scores(val_acc):
     )
 
     # fig.show()
-    save_path = "results"
-    makedirs(save_path)
-    fig.write_image(os.path.join(save_path, "accuracy_graph.png"))
+    fig.write_image(os.path.join(PATH_RESULTS, "accuracy_graph.png"))
 
 
 if __name__ == "__main__":
-    train_loader, val_loader, test_loader = get_dataloader(128, 10000)
+    train_loss, val_loss, val_acc = get_metrics("lightning_logs/version_0/metrics.csv")
 
-    save_path = "samples"
-    makedirs(save_path)
-
-    for images, labels in train_loader:
-        print(images[60].shape, labels[60])
-        img = images[60].squeeze().numpy()
-        fig = px.imshow(img, color_continuous_scale="gray")
-        fig.write_image(os.path.join(save_path, "sample_image.png"))
-        break
+    plot_losses(train_loss, val_loss)
+    plot_scores(val_acc)
