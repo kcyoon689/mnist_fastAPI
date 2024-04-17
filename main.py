@@ -3,45 +3,31 @@ from io import BytesIO
 from typing import Optional
 
 import mlflow
+import onnx
 import uvicorn
 import torch
+import numpy as np
 from PIL import Image
 from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from modules import (
-    MnistModel,
-    predict,
-    train_model,
-    setup_logging,
-)
+from modules import MNISTDataModule, MNISTModel, Utils
 
 app = FastAPI()
 
 
 class TrainRequest(BaseModel):
     learning_rate: float = 0.01
-    epochs: int = 10
-    batch_size: int = 128
-    val_size: int = 10000  # 검증 데이터셋 크기 추가
+    max_epochs: int = 10
+    batch_size: int = 256
     other_hyperparameters: Optional[dict] = None
 
 
 class RegisterRequest(BaseModel):
-    experiment_id: str
-    mnist_model_path: str
-    artifact_path: str = "mnist_model.onnx"
-    register_name: str = "mnist_model"
-
-
-# class predictRequest(BaseModel):
-#     input_img_path: str
-#     # mlflow model
-#     model_name: str
-#     # mlflow registered model
-#     registered_model_name: str
-#     # mlflow experiment
-#     experiment_name: str
+    run_id: str
+    artifact_path: str = "model"
+    registered_model_name: str = "mnist_model"
+    registered_artifact_path: str = "onnx_model"
 
 
 @app.get("/")
@@ -51,74 +37,103 @@ def root():
 
 @app.post("/train")
 async def post_train(train_request: TrainRequest):
-    setup_logging()
+    Utils.setup_logging()
 
     # 학습 파라미터
     lr = train_request.learning_rate
-    epochs = train_request.epochs
+    max_epochs = train_request.max_epochs
     batch_size = train_request.batch_size
-    val_size = train_request.val_size
     other_params = train_request.other_hyperparameters or {}
 
+    mlflow.pytorch.autolog()
+
+    dm = MNISTDataModule()
+    model = MNISTModel(
+        *dm.dims,
+        num_classes=dm.num_classes,
+        hidden_size=batch_size,
+        learning_rate=lr,
+        max_epochs=max_epochs,
+    )
+    trainer = model.trainer
+
     try:
-        # train_loader, val_loader, test_loader = get_dataloader(batch_size, val_size)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        args = {
-            "lr": lr,
-            "n_epochs": epochs,
-            "batch_size": batch_size,
-            "val_size": val_size,
-            **other_params,  # 기타 하이퍼파라미터 추가
-        }
-
-        # 현재 활성화된 MLflow 실행이 있다면 종료
-        if mlflow.active_run():
-            mlflow.end_run()
-
-        # 새로운 MLflow 실행 시작
+        # Train the model
         with mlflow.start_run() as mlflow_run:
-            train_loss, val_loss, val_acc = train_model(args, mlflow_run)
-            experiment_id = mlflow_run.info.run_id
-
-        # # 학습 과정 시각화
-        # plotly_plot_losses(train_loss, val_loss)
-        # plotly_plot_scores(val_acc)
+            trainer.fit(model=model, datamodule=dm)
+            mlflow_run_dict = mlflow_run.to_dictionary()
 
         return JSONResponse(
             content={
-                "experiment_id": experiment_id,
-                "train_loss": train_loss,
-                "val_loss": val_loss,
-                "val_acc": val_acc,
+                "run_id": mlflow_run_dict["info"]["run_id"],
+                "artifact_path": "model",
             },
             status_code=200,
         )
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/register")
 async def post_register(register_request: RegisterRequest):
-    experiment_id = register_request.experiment_id
-    mnist_model_path = register_request.mnist_model_path
+    run_id = register_request.run_id
     artifact_path = register_request.artifact_path
-    register_name = register_request.register_name
+    registered_model_name = register_request.registered_model_name
+    registered_artifact_path = register_request.registered_artifact_path
 
     try:
-        # 모델을 ONNX 형식으로 변환
-        model_instance = MnistModel()
-        model_instance.load_state_dict(torch.load(mnist_model_path))
-        model_instance.eval()
+        model = mlflow.pytorch.load_model(f"runs:/{run_id}/{artifact_path}")
+        input_sample = torch.randn((1, 1, 28, 28))
+        model.to_onnx("weights/model.onnx", input_sample, export_params=True)
+        onnx_model = onnx.load("weights/model.onnx")
+        onnx.checker.check_model(onnx_model)
 
-        dummy_input = torch.randn(1, 1, 28, 28)
-        torch.onnx.export(model_instance, dummy_input, artifact_path)
-
-        result = mlflow.register_model(f"runs:/{experiment_id}/model", "test_model")
+        registered_model_info = mlflow.onnx.log_model(
+            onnx_model,
+            registered_artifact_path,
+            registered_model_name=registered_model_name,
+        )
 
         return JSONResponse(
-            content={"status": "success", "result": result}, status_code=200
+            content={
+                "registered_run_id": registered_model_info.run_id,
+                "registered_artifact_path": registered_model_info.artifact_path,
+            },
+            status_code=200,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@app.post("/predict")
+async def post_predict(file: UploadFile = File(...)):
+    contents = await file.read()
+    try:
+        upload_image = Image.open(BytesIO(contents))
+        image_tensor = MNISTDataModule().predict_transform(upload_image).unsqueeze(0)
+
+        client = mlflow.MlflowClient()
+        for rm in client.search_registered_models():
+            if rm.name == "mnist_model":
+                if rm.latest_versions:
+                    latest_model_run_id = rm.latest_versions[0].run_id
+                    latest_model_artifact_path = rm.latest_versions[0].source.split(
+                        "/"
+                    )[-1]
+        loaded_onnx_model = mlflow.pyfunc.load_model(
+            f"runs:/{latest_model_run_id}/{latest_model_artifact_path}"
+        )
+        raw_onnx_outputs = loaded_onnx_model.predict(image_tensor.numpy())
+        onnx_outputs = list(raw_onnx_outputs.values())[0][0]
+        prediction = np.argmax(onnx_outputs)
+        confidence = Utils.softmax(onnx_outputs)
+
+        return JSONResponse(
+            content={
+                "label": str(prediction),
+                "confidence": str(confidence),
+            },
+            status_code=200,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
@@ -133,23 +148,6 @@ def parse_args():
         help="host ip address",
     )
     return parser.parse_args()
-
-
-@app.post("/predict")
-async def post_predict(file: UploadFile = File(...)):
-    contents = await file.read()
-    try:
-        loaded_image = Image.open(BytesIO(contents))
-        prediction, confidence = predict(loaded_image)
-        return JSONResponse(
-            content={
-                "label": str(prediction),
-                "confidence": str(confidence),
-            },
-            status_code=200,
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 if __name__ == "__main__":
