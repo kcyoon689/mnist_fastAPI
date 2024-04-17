@@ -1,3 +1,4 @@
+import os
 import argparse
 from io import BytesIO
 from typing import Optional
@@ -87,6 +88,7 @@ async def post_register(register_request: RegisterRequest):
     try:
         model = mlflow.pytorch.load_model(f"runs:/{run_id}/{artifact_path}")
         input_sample = torch.randn((1, 1, 28, 28))
+        os.makedirs("weights", exist_ok=True)
         model.to_onnx("weights/model.onnx", input_sample, export_params=True)
         onnx_model = onnx.load("weights/model.onnx")
         onnx.checker.check_model(onnx_model)
