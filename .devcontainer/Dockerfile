@@ -67,5 +67,3 @@ RUN sudo apt-get -qq update \
 	&& git clone "https://github.com/supercrabtree/k" ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/k
 ADD .zshrc /home/${USER_NAME}
 ENV SHELL "/bin/zsh"
-
-# cmd main.py
