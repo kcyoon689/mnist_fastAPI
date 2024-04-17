@@ -21,9 +21,9 @@ app = FastAPI()
 
 
 class TrainRequest(BaseModel):
-    learning_rate: float
-    epochs: int
-    batch_size: int
+    learning_rate: float = 0.01
+    epochs: int = 10
+    batch_size: int = 128
     val_size: int = 10000  # 검증 데이터셋 크기 추가
     other_hyperparameters: Optional[dict] = None
 
