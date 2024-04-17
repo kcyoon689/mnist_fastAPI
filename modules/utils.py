@@ -19,6 +19,7 @@ class Utils:
     def softmax(x: np.ndarray) -> np.ndarray:
         y = np.exp(x - np.max(x))
         f_x = y / np.sum(np.exp(x))
+        f_x = max(f_x)/sum(f_x) * 100
         return f_x
 
     @staticmethod
