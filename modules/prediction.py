@@ -2,9 +2,9 @@ import torch
 import torchvision.transforms as transforms
 from PIL import Image
 import argparse
-import model
+from .model import MnistModel
 import random
-from utils import get_dataloader
+from .utils import get_dataloader
 
 # parser = argparse.ArgumentParser(description='Predict MNIST digits from an image file.')
 # parser.add_argument('--image_path', type=str, default='./sample_image.png', required=True, help='Path to the input image')
@@ -26,7 +26,7 @@ def predict(img: Image, model_path="./weights/model_10epochs_240414_164948.pth")
     image = transform(img).unsqueeze(0)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model_instance = model.MnistModel().to(device)
+    model_instance = MnistModel().to(device)
     model_instance.load_state_dict(torch.load(model_path, map_location=device))
     model_instance.eval()
 
@@ -43,7 +43,7 @@ def predict(img: Image, model_path="./weights/model_10epochs_240414_164948.pth")
 
 
 if __name__ == "__main__":
-    image_path = "./samples/sample_image.png"
+    image_path = "samples/sample_image.png"
     image = Image.open(image_path)
     prediction, confidence = predict(image)
     print(f"Predicted digit: {prediction}")

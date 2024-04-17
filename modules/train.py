@@ -1,8 +1,8 @@
 import argparse
-import model
+from .model import MnistModel
 import torch
 from torch.optim.lr_scheduler import OneCycleLR
-from utils import get_dataloader, makedirs, plotly_plot_losses, plotly_plot_scores
+from .utils import get_dataloader, makedirs, plotly_plot_losses, plotly_plot_scores
 import datetime
 from datetime import timezone, timedelta
 import mlflow
@@ -89,7 +89,7 @@ def train_model(args_dict: dict):
         }
     )
 
-    model_instance = model.MnistModel().to(device)
+    model_instance = MnistModel().to(device)
     history, train_loss, val_loss, val_acc = fit(
         args_dict.get("n_epochs"),
         args_dict.get("lr"),
@@ -114,7 +114,7 @@ def train_model(args_dict: dict):
     )
 
     # save the model
-    save_path = "./weights/"
+    save_path = "weights/"
     makedirs(save_path)
 
     # UTC to KST(UTC+9)

@@ -30,8 +30,8 @@ class TrainRequest(BaseModel):
 
 class RegisterRequest(BaseModel):
     experiment_id: str
-    model_path: str
-    model_name: str = "mnist_model.onnx"
+    mnist_model_path: str
+    artifact_path: str = "mnist_model.onnx"
     register_name: str = "mnist_model"
 
 
@@ -100,18 +100,18 @@ async def train(train_request: TrainRequest):
 @app.post("/register/")
 async def register(register_request: RegisterRequest):
     experiment_id = register_request.experiment_id
-    model_path = register_request.model_path
-    model_name = register_request.model_name
+    mnist_model_path = register_request.mnist_model_path
+    artifact_path = register_request.artifact_path
     register_name = register_request.register_name
 
     try:
         # 모델을 ONNX 형식으로 변환
         model_instance = MnistModel()
-        model_instance.load_state_dict(torch.load(model_path))
+        model_instance.load_state_dict(torch.load(mnist_model_path))
         model_instance.eval()
 
         dummy_input = torch.randn(1, 1, 28, 28)
-        torch.onnx.export(model_instance, dummy_input, model_name)
+        torch.onnx.export(model_instance, dummy_input, artifact_path)
 
         # 현재 활성화된 MLflow 실행이 있다면 종료
         if mlflow.active_run():
@@ -119,9 +119,9 @@ async def register(register_request: RegisterRequest):
 
         # 새로운 MLflow 실행 시작
         with mlflow.start_run():
-            # mlflow.pytorch.log_model(model_instance, model_name)
+            # mlflow.pytorch.log_model(model_instance, artifact_path)
             mlflow.pytorch.log_model(
-                model_instance, model_name, registered_model_name=register_name
+                model_instance, artifact_path, registered_model_name=register_name
             )
 
         return {"status": "success"}
@@ -134,11 +134,11 @@ async def register(register_request: RegisterRequest):
 
 @app.post("/predict")
 # define a form with a multipart input, which will be the image in this case.
-async def predict(file: UploadFile = File(...)):
+async def post_predict(file: UploadFile = File(...)):
     contents: bytes = await file.read()
-    loaded_image: Image = Image.open(BytesIO(contents))
+    loaded_image = Image.open(BytesIO(contents))
     # loaded_image = np.expand_dims(loaded_image, axis=0)
-    prediction, confidence = await predict(loaded_image)
+    prediction, confidence = predict(loaded_image)
     return {"label": str(prediction), "confidence": str(confidence)}
 
 

@@ -12,7 +12,7 @@ import uuid
 
 
 def get_dataloader(batch_size, val_size):
-    dataset = MNIST(root="./data", download=True, transform=ToTensor())
+    dataset = MNIST(root="data", download=True, transform=ToTensor())
 
     train_size = len(dataset) - val_size
     train_ds, val_ds = random_split(dataset, [train_size, val_size])
@@ -40,7 +40,7 @@ def get_dataloader(batch_size, val_size):
     # print('Std: ', train_std)
 
     dataset = MNIST(
-        root="./data",
+        root="data",
         download=True,
         transform=transforms.Compose(
             [
@@ -52,7 +52,7 @@ def get_dataloader(batch_size, val_size):
     )
 
     test_dataset = MNIST(
-        root="./data",
+        root="data",
         train=False,
         transform=transforms.Compose(
             [transforms.ToTensor(), transforms.Normalize((0.1308,), (0.3016,))]
@@ -125,7 +125,7 @@ def plotly_plot_losses(train_loss, val_loss):
         title="Loss vs. No. of epochs", xaxis_title="Epoch", yaxis_title="Loss"
     )
 
-    save_path = "./results/"
+    save_path = "results"
     makedirs(save_path)
     fig.write_image(os.path.join(save_path, "loss_graph.png"))
 
@@ -151,7 +151,7 @@ def plotly_plot_scores(val_acc):
     )
 
     # fig.show()
-    save_path = "./results/"
+    save_path = "results"
     makedirs(save_path)
     fig.write_image(os.path.join(save_path, "accuracy_graph.png"))
 
@@ -159,7 +159,7 @@ def plotly_plot_scores(val_acc):
 if __name__ == "__main__":
     train_loader, val_loader, test_loader = get_dataloader(128, 10000)
 
-    save_path = "./samples/"
+    save_path = "samples"
     makedirs(save_path)
 
     for images, labels in train_loader:

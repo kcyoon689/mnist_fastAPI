@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from trainer import MnistModelBase
+from .trainer import MnistModelBase
 from torchsummary import summary
 
 
