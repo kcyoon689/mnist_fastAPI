@@ -45,6 +45,9 @@ async def post_train(train_request: TrainRequest):
     batch_size = train_request.batch_size
     other_params = train_request.other_hyperparameters or {}
 
+    if mlflow.active_run():
+        mlflow.end_run()
+
     mlflow.pytorch.autolog()
 
     dm = MNISTDataModule()
@@ -93,6 +96,8 @@ async def post_register(register_request: RegisterRequest):
             registered_artifact_path,
             registered_model_name=registered_model_name,
         )
+
+        print("registered_run_id:", registered_model_info.run_id)
 
         return JSONResponse(
             content={
