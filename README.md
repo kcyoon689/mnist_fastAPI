@@ -1,126 +1,169 @@
-
 # Task
-Goal: Develop an API service for training and serving a deep learning model for MNIST classification, integrated with a model registry and experiment tracking.
 
-* Task: Design and Implement an API with three endpoints:
+MNIST Classification API Service
 
-     * Train: \
-          Receives hyperparameters and trains a deep neural network for MNIST classification. Logs training metrics and artifacts to a local experiment tracking server. Upon completion, returns information about the tracked experiment entry.
-     * Register: \
-          Receives a reference to a training experiment, exports the corresponding model to ONNX format, and promotes it to a model registry. May include some model governance processes before registering. Returns information about the registered model.
+## Goal
 
-     * Predict: \
-          Receives an image file,predicts the digit using the latest registered model, and returns the prediction result. 
+Develop an API service for training and serving a deep learning model for MNIST classification, integrated with a model registry and experiment tracking.
 
-# Introduction
+## Tasks
 
-There are three endpoints.
+Design and Implement an API with three endpoints:
 
-||train|register|predict|
-|------|---|---|---|
-|Method|POST|POST|POST|
-|Input|hyperparameter(.json)|model path|image path|
-|Output|Checkpoint file(.pth)|Information on the registered model (registrate, registration time, hyperparameters, data, etc.)|predict result and confidence|
+### Train
 
-# Installation
+- **Description**:
 
-The package for this project is provided in requirements.txt.
+  Receives hyperparameter and trains a deep neural network for MNIST classification.
 
-## conda
+- **Details**:
+  - Logs training metrics and artifacts to a local experiment tracking server.
+  - Upon completion, returns information about the tracked experiment entry.
 
-```$conda create -n myenv python=3.9```
-```$pip install -r requirements.txt```
+### Register
 
-## docker
+- **Description**: Receives a reference to a training experiment, exports the corresponding model to ONNX format, and promotes it to a model registry.
+- **Details**:
+  - May include some model governance processes before registering.
+  - Returns information about the registered model.
 
-To use the docker, you need to use the docker image. Build and run the image in the docker folder.
-     ```$ docker built -t {image_name} .```
-     ```$ docker run [OPTIONS] IMAGE[:TAG|@DIGEST] [COMMAND] [ARG...]```
+### Predict
 
-Install the package using requirements.txt within the docker.
-     ```# pip install -r requirements.txt```
+- **Description**: Receives an image file, predicts the digit using the latest registered model, and returns the prediction result.
 
-# Quick Start
+## Introduction
+
+This API service is designed to streamline the training, registration, and prediction processes for a deep learning model focused on MNIST classification. The service features three primary endpoints, each serving a unique purpose in the model lifecycle.
+
+### Endpoints Overview
+
+| Endpoint | Method | Input               | Output                                               |
+|----------|--------|---------------------|------------------------------------------------------|
+| Train    | POST   | hyperparameters (.json) | model ID, and experiment tracking information. |
+| Register | POST   | model ID          | register ID |
+| Predict  | POST   | image path          | predicted digit and confidence score. |
+
+## Installation
+
+### docker
+
+1. To use the docker, you need to use the docker image. Build and run the image in the docker folder.
+
+    ```bash
+    $ docker build -t {image_name} .
+    $ docker run [OPTIONS] IMAGE[:TAG|@DIGEST] [COMMAND] [ARG...]
+    ```
+
+2. Install the package using requirements.txt within the docker.
+
+    ```
+    # pip install -r requirements.txt
+    ```
+
+### conda
+
+1. Create a virtual environment
+
+    ```bash
+    $ conda create -n mnist python=3.10
+    $ conda activate mnist
+    ```
+
+2. Install the package
+
+    ```bash
+    $ pip install -r requirements.txt
+    ```
+
+## Quick Start
 
 There are two ways to use this project.
 
 1. Use curl.
 2. Use Swagger API
 
-## use curl
-1. run main.py
-   The server must always be running to run the following APIs.
+### use curl
 
-2. endpoints
-     * /train/  
-          Run the train endpoint to train a CNN model for MNIST.
-        To train the model, the user must enter hyperparameters, as shown below.
+1. endpoints
+     - **/train/**
+  Run the train endpoint to train a CNN model MNIST. To train the model, the user must enter hyper parameters, as shown below.
 
-        example input:
-        ```
-        $ curl -X POST "http://0.0.0.0:8000/train/" \ 
-          -H "Content-Type: application/json" \ 
-          -d '{"learning_rate": 0.001, "epochs": 10, "batch_size": 128, "val_size": 10000}' 
-        ```
-          
+       - example input:
 
-     * /register/  
-          To register a trained model with mlflow register endpoint.  \
-             example input:
+          ```bash
+          $ curl -X POST "http://localhost:8000/train/" \
+            -H "Content-Type: application/json" \
+            -d '{"learning_rate": 0.001, "epochs": 10, "batch_size": 128, "val_size": 10000}'
+          ```
 
-             $ curl -X POST "http://0.0.0.0:8000/register/" \ 
-                  -H "Content-Type: application/json" \ 
-                  -d '{"experiment_id": "123", "model_path": "path/to/model.pt"}'
+     - /register/
+          To register a trained model with mlflow register endpoint.
+          - example input:
 
-     * /predict/  
+              ```bash
+              $ curl -X POST "http://localhost:8000/register/" \
+                -H "Content-Type: application/json" \
+                -d '{ "run_id": "{run_id}", "artifact_path": "model", \
+                "registered_model_name": "mnist_model", "registered_artifact_path": "onnx_model" }'
+              ```
+
+     - /predict/
           Run a prediction endpoint to predict your trained model.
-        
-        ```
-        $ curl -X POST "http://0.0.0.0:8000/train/" \ 
-        -H "Content-Type: application/json" \ 
-        -d '{"learning_rate": 0.001, "epochs": 10, "batch_size": 128, "val_size": 10000}' 
-        ```
-        
+          - example input:
+
+              ```bash
+              $ curl -X POST "http://localhost:8000/predict/" \
+                -H "Content-Type: application/json" \
+                -H 'Content-Type: multipart/form-data' \
+                -F 'file=@{img_path};type=image/jpeg'
+              ```
+
 ## Or the swagger API provided.
 
-1. run main.py
-   The server must always be running to run the following APIs.
-
-2. To use swagger refer to http://localhost:8000/docs
-   Where the endpoint parameters are shown and we are able to upload new images and test the api.
+1. To use swagger refer to http://localhost:8000/docs
+   where the endpoint parameters are shown and we are able to upload new images and test the api.
 
 * /train/
      * input_example
-          ![alt text](API_example_img/train_input.png)
+          ![alt text](readme_img/train_input.png)
      * output_example
-          ![alt text](API_example_img/train_output.png)
+          ![alt text](readme_img/train_output.png)
 
 * /register/
   * input
+          ![alt text](readme_img/register_input.png)
   * output
+          ![alt text](readme_img/register_output.png)
 * /prediction/
   * input
+          ![alt text](readme_img/predict_input.png)
   * output
+          ![alt text](readme_img/predict_output.png)
 
-# mlflow
+## mlflow
 
-```$ mlflow ui```
+```bash
+$ mlflow ui -p 5000 -h {host_ip}
+```
 
-# Reference
+## Reference
 
-* CNN Base model:[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/divya-r-kamat/PyTorch/blob/master/MNIST_CNN_(Fine_Tuning).ipynb)
+- CNN Base model: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/divya-r-kamat/PyTorch/blob/master/MNIST_CNN_(Fine_Tuning).ipynb)
 
-* Pipeline:
-  * https://mlops-for-mle.github.io/tutorial/docs/intro
-  * https://codereader.tistory.com/49
-  * https://cow-coding.github.io/posts/day6_torch2/
+- Pipeline:
+  - [https://mlops-for-mle.github.io/tutorial/docs/intro](https://mlops-for-mle.github.io/tutorial/docs/intro)
+  - [https://codereader.tistory.com/49](https://codereader.tistory.com/49)
+  - [https://cow-coding.github.io/posts/day6_torch2/](https://cow-coding.github.io/posts/day6_torch2/)
 
-* APIs example
-  * https://github.com/afoley587/hosting-yolo-fastapi
-  * https://github.com/KiLJ4EdeN/fastapi_tf-keras_example
-  * https://github.com/woodywarhol9/hydra-practice
+- MLflow:
+  - [https://mlflow.org/docs/latest/index.html](https://mlflow.org/docs/latest/index.html)
 
-* lightning
-  * https://velog.io/@rapidrabbit76/pytorch-lightning-hooks
-  * https://baeseongsu.github.io/posts/pytorch-lightning-introduction/
-  * https://lightning.ai/docs/pytorch/stable/deploy/production_advanced.html
+- APIs example:
+  - [https://github.com/afoley587/hosting-yolo-fastapi](https://github.com/afoley587/hosting-yolo-fastapi)
+  - [https://github.com/KiLJ4EdeN/fastapi_tf-keras_example](https://github.com/KiLJ4EdeN/fastapi_tf-keras_example)
+  - [https://github.com/woodywarhol9/hydra-practice](https://github.com/woodywarhol9/hydra-practice)
+
+- lightning:
+  - [https://velog.io/@rapidrabbit76/pytorch-lightning-hooks](https://velog.io/@rapidrabbit76/pytorch-lightning-hooks)
+  - [https://baeseongsu.github.io/posts/pytorch-lightning-introduction/](https://baeseongsu.github.io/posts/pytorch-lightning-introduction/)
+  - [https://lightning.ai/docs/pytorch/stable/deploy/production_advanced.html](https://lightning.ai/docs/pytorch/stable/deploy/production_advanced.html)
