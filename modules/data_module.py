@@ -1,5 +1,4 @@
 import os
-from lightning.pytorch.utilities.types import EVAL_DATALOADERS
 import torch
 from torchvision import transforms
 from torchvision.datasets import MNIST
@@ -14,6 +13,15 @@ BATCH_SIZE = 256 if AVAIL_GPUS else 64
 
 
 class MNISTDataModule(L.LightningDataModule):
+    predict_transform = transforms.Compose(
+        [
+            transforms.Grayscale(num_output_channels=1),
+            transforms.Resize((28, 28)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5,), (0.5,)),
+        ]
+    )
+
     def __init__(self, data_dir: str = PATH_DATASETS):
         super().__init__()
         self.data_dir = data_dir
@@ -23,15 +31,6 @@ class MNISTDataModule(L.LightningDataModule):
                 transforms.Normalize((0.1307,), (0.3081,)),
             ]
         )
-        self.predict_transform = transforms.Compose(
-            [
-                transforms.Grayscale(num_output_channels=1),
-                transforms.Resize((28, 28)),
-                transforms.ToTensor(),
-                transforms.Normalize((0.5,), (0.5,)),
-            ]
-        )
-
         self.dims = (1, 28, 28)
         self.num_classes = 10
 
