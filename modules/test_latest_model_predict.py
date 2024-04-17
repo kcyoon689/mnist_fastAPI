@@ -1,12 +1,12 @@
 import numpy as np
 import mlflow
 from PIL import Image
-from data_module import MNISTDataModule
-from utils import Utils
+from modules.data_module import MNISTDataModule
+from modules.utils import Utils
 
 
-image = Image.open(f"samples/img_2.jpg")
-image_tensor = MNISTDataModule().predict_transform(image).unsqueeze(0)
+image = Image.open("samples/img_2.jpg")
+image_tensor = MNISTDataModule.predict_transform(image).unsqueeze(0)
 
 client = mlflow.MlflowClient()
 for rm in client.search_registered_models():

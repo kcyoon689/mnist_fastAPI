@@ -43,18 +43,18 @@ async def post_train(train_request: TrainRequest):
     lr = train_request.learning_rate
     max_epochs = train_request.max_epochs
     batch_size = train_request.batch_size
-    other_params = train_request.other_hyperparameters or {}
+    # other_params = train_request.other_hyperparameters or {}
 
     if mlflow.active_run():
         mlflow.end_run()
 
     mlflow.pytorch.autolog()
 
-    dm = MNISTDataModule()
+    dm = MNISTDataModule(batch_size)
     model = MNISTModel(
         *dm.dims,
         num_classes=dm.num_classes,
-        hidden_size=batch_size,
+        batch_size=batch_size,
         learning_rate=lr,
         max_epochs=max_epochs,
     )
@@ -115,7 +115,7 @@ async def post_predict(file: UploadFile = File(...)):
     contents = await file.read()
     try:
         upload_image = Image.open(BytesIO(contents))
-        image_tensor = MNISTDataModule().predict_transform(upload_image).unsqueeze(0)
+        image_tensor = MNISTDataModule.predict_transform(upload_image).unsqueeze(0)
 
         client = mlflow.MlflowClient()
         for rm in client.search_registered_models():
@@ -144,7 +144,7 @@ async def post_predict(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Model Serving API Service.")
     parser.add_argument(
         "--host_ip",

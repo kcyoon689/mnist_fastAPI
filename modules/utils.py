@@ -4,9 +4,6 @@ import os
 import numpy as np
 import plotly.graph_objects as go
 
-PATH_RESULTS = os.getenv("PATH_RESULTS", "results")
-os.makedirs(PATH_RESULTS, exist_ok=True)
-
 
 class Utils:
     @staticmethod
@@ -19,34 +16,34 @@ class Utils:
     def softmax(x: np.ndarray) -> np.ndarray:
         y = np.exp(x - np.max(x))
         f_x = y / np.sum(np.exp(x))
-        f_x = max(f_x)/sum(f_x) * 100
+        f_x = max(f_x) / sum(f_x) * 100
         return f_x
 
     @staticmethod
     def get_metrics(csv_path: str) -> tuple[list[float], list[float], list[float]]:
-        train_loss: list[float] = []
-        val_loss: list[float] = []
-        val_acc: list[float] = []
+        train_loss_list: list[float] = []
+        val_loss_list: list[float] = []
+        val_acc_list: list[float] = []
         with open(csv_path, "r", encoding="utf-8", newline="") as f_in:
             reader = csv.DictReader(f_in)
             for line in reader:
                 if line["train_loss"] != "":
-                    train_loss.append(float(line["train_loss"]))
+                    train_loss_list.append(float(line["train_loss"]))
                 if line["val_loss"] != "":
-                    val_loss.append(float(line["val_loss"]))
+                    val_loss_list.append(float(line["val_loss"]))
                 if line["val_acc"] != "":
-                    val_acc.append(float(line["val_acc"]))
-        return train_loss, val_loss, val_acc
+                    val_acc_list.append(float(line["val_acc"]))
+        return train_loss_list, val_loss_list, val_acc_list
 
     @staticmethod
-    def plot_losses(train_loss: list[float], val_loss: list[float]) -> None:
+    def plot_losses(train_loss_list: list[float], val_loss_list: list[float]) -> None:
         fig = go.Figure()
 
         # Training losses
         fig.add_trace(
             go.Scatter(
-                x=list(range(1, len(train_loss) + 1)),
-                y=train_loss,
+                x=list(range(1, len(train_loss_list) + 1)),
+                y=train_loss_list,
                 mode="lines+markers",
                 name="Training",
             )
@@ -55,8 +52,8 @@ class Utils:
         # Validation losses
         fig.add_trace(
             go.Scatter(
-                x=list(range(1, len(val_loss) + 1)),
-                y=val_loss,
+                x=list(range(1, len(val_loss_list) + 1)),
+                y=val_loss_list,
                 mode="lines+markers",
                 name="Validation",
             )
@@ -66,17 +63,18 @@ class Utils:
             title="Loss vs. No. of epochs", xaxis_title="Epoch", yaxis_title="Loss"
         )
 
-        fig.write_image(os.path.join(PATH_RESULTS, "loss_graph.png"))
+        os.makedirs("results", exist_ok=True)
+        fig.write_image(os.path.join("results", "loss_graph.png"))
 
     @staticmethod
-    def plot_scores(val_acc: list[float]) -> None:
+    def plot_scores(val_acc_list: list[float]) -> None:
         fig = go.Figure()
 
         # Validation accuracy
         fig.add_trace(
             go.Scatter(
-                x=list(range(1, len(val_acc) + 1)),
-                y=val_acc,
+                x=list(range(1, len(val_acc_list) + 1)),
+                y=val_acc_list,
                 mode="lines+markers",
                 name="Validation Accuracy",
             )
@@ -89,7 +87,8 @@ class Utils:
         )
 
         # fig.show()
-        fig.write_image(os.path.join(PATH_RESULTS, "accuracy_graph.png"))
+        os.makedirs("results", exist_ok=True)
+        fig.write_image(os.path.join("results", "accuracy_graph.png"))
 
 
 if __name__ == "__main__":

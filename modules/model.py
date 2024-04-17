@@ -1,5 +1,5 @@
-import mlflow
 import os
+import mlflow
 import onnx
 import onnxruntime
 import torch
@@ -12,9 +12,6 @@ from lightning.pytorch.callbacks import ModelSummary
 from lightning.pytorch.utilities.types import OptimizerLRSchedulerConfig
 from modules.data_module import MNISTDataModule
 
-PATH_WEIGHTS = os.getenv("PATH_WEIGHTS", "weights")
-os.makedirs(PATH_WEIGHTS, exist_ok=True)
-
 
 class MNISTModel(L.LightningModule):
     def __init__(
@@ -23,12 +20,12 @@ class MNISTModel(L.LightningModule):
         width,
         height,
         num_classes,
-        hidden_size=64,
+        batch_size=256,
         learning_rate=0.01,
         max_epochs=10,
-    ):
+    ) -> None:
         super().__init__()
-        self.example_input_array = torch.Tensor(hidden_size, 1, 28, 28)
+        self.example_input_array = torch.Tensor(batch_size, 1, 28, 28)
         self.save_hyperparameters()
 
         # We take in input dimensions as parameters and use those to dynamically build model.
@@ -36,7 +33,7 @@ class MNISTModel(L.LightningModule):
         self.width = width
         self.height = height
         self.num_classes = num_classes
-        self.hidden_size = hidden_size
+        self.batch_size = batch_size
         self.learning_rate = learning_rate
 
         self.trainer = L.Trainer(
@@ -53,27 +50,27 @@ class MNISTModel(L.LightningModule):
 
         self.model = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(channels * width * height, hidden_size),
+            nn.Linear(channels * width * height, batch_size),
             nn.ReLU(),
             # nn.Dropout(0.1),
-            nn.Linear(hidden_size, hidden_size),
+            nn.Linear(batch_size, batch_size),
             nn.ReLU(),
             # nn.Dropout(0.1),
-            nn.Linear(hidden_size, num_classes),
+            nn.Linear(batch_size, num_classes),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.model(x)
         return F.log_softmax(x, dim=1)
 
-    def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor:
+    def training_step(self, batch: torch.Tensor) -> torch.Tensor:
         x, y = batch
         logits = self(x)
         loss = F.nll_loss(logits, y)
         self.log("train_loss", loss, prog_bar=True, on_step=False, on_epoch=True)
         return loss
 
-    def validation_step(self, batch: torch.Tensor, batch_idx: int) -> None:
+    def validation_step(self, batch: torch.Tensor) -> None:
         x, y = batch
         logits = self(x)
         loss = F.nll_loss(logits, y)
@@ -82,8 +79,8 @@ class MNISTModel(L.LightningModule):
         self.log("val_loss", loss, prog_bar=True)
         self.log("val_acc", acc, prog_bar=True)
 
-    def test_step(self, batch: torch.Tensor, batch_idx: int) -> None:
-        return self.validation_step(batch, batch_idx)
+    def test_step(self, batch: torch.Tensor) -> None:
+        return self.validation_step(batch)
 
     def configure_optimizers(self) -> OptimizerLRSchedulerConfig:
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
@@ -98,7 +95,6 @@ class MNISTModel(L.LightningModule):
 # Print Summary of the model
 if __name__ == "__main__":
     mlflow.pytorch.autolog()
-
     dm = MNISTDataModule()
     model = MNISTModel(*dm.dims, num_classes=dm.num_classes)
     trainer = model.trainer
@@ -113,11 +109,11 @@ if __name__ == "__main__":
     trainer.test(model=model, datamodule=dm)
 
     # Predict
-    print("answer: [2, 0, 9, 0, 3, 7, 0, 3, 0, 3]")
+    # print("answer: [2, 0, 9, 0, 3, 7, 0, 3, 0, 3]")
     results = []
     for idx in range(1, 11):
         image = Image.open(f"samples/img_{idx}.jpg")
-        image_tensor = MNISTDataModule().predict_transform(image).unsqueeze(0)
+        image_tensor = MNISTDataModule.predict_transform(image).unsqueeze(0)
         torch_outputs = model(image_tensor.to(model.device))
         confidence = F.softmax(torch_outputs, dim=1)[0] * 100
         result = torch.argmax(torch_outputs, dim=1)[0]
@@ -126,6 +122,8 @@ if __name__ == "__main__":
         # print(result.item())
         results.append(result.item())
     print(results)
+
+    os.makedirs("weights", exist_ok=True)
 
     # convert to onnx model
     # input_sample = torch.randn((1, 1, 28, 28))  # image_tensor
