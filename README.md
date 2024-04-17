@@ -39,9 +39,9 @@ This API service is designed to streamline the training, registration, and predi
 
 | Endpoint | Method | Input               | Output                                               |
 |----------|--------|---------------------|------------------------------------------------------|
-| Train    | POST   | hyperparameters (.json) | model ID, and experiment tracking information. |
-| Register | POST   | model ID          | register ID |
-| Predict  | POST   | image path          | predicted digit and confidence score. |
+| Train    | POST   | hyperparameters (json) | model ID, and experiment tracking information. |
+| Register | POST   | model ID,artifact ID          | register ID |
+| Predict  | POST   | image         | predicted digit and confidence score. |
 
 ## Installation
 
@@ -50,7 +50,7 @@ This API service is designed to streamline the training, registration, and predi
 1. To use the docker, you need to use the docker image. Build and run the image in the docker folder.
 
     ```bash
-    $ docker build -t {image_name} .
+    $ docker build -t [IMAGE_NAME] .
     $ docker run [OPTIONS] IMAGE[:TAG|@DIGEST] [COMMAND] [ARG...]
     ```
 
@@ -79,7 +79,7 @@ This API service is designed to streamline the training, registration, and predi
 
 There are two ways to use this project.
 
-1. Use curl.
+1. Use curl
 2. Use Swagger API
 
 ### Use curl
@@ -120,7 +120,7 @@ There are two ways to use this project.
 
 ## Use swagger API
 
-1. To use swagger refer to [http://localhost:8000/docs]
+1. To use swagger refer to [http://localhost:8000/docs](http://localhost:8000/docs)
    where the endpoint parameters are shown and we are able to upload new images and test the api.
 
 - /train/
@@ -143,7 +143,7 @@ There are two ways to use this project.
 ## mlflow
 
 ```bash
-$ mlflow ui -p 5000 -h {host_ip}
+$ mlflow ui -p 5000 -h [HOST_IP]
 ```
 
 ## Reference
