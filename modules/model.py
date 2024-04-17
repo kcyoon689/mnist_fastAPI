@@ -28,7 +28,7 @@ class MNISTModel(L.LightningModule):
         max_epochs=10,
     ):
         super().__init__()
-        self.example_input_array = torch.Tensor(64, 1, 28, 28)
+        self.example_input_array = torch.Tensor(hidden_size, 1, 28, 28)
         self.save_hyperparameters()
 
         # We take in input dimensions as parameters and use those to dynamically build model.
