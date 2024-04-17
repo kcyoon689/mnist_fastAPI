@@ -1,13 +1,10 @@
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
-import argparse
-from .model import MnistModel
-import random
-from .utils import get_dataloader
+from modules.model import MnistModel
 
 # parser = argparse.ArgumentParser(description='Predict MNIST digits from an image file.')
-# parser.add_argument('--image_path', type=str, default='./sample_image.png', required=True, help='Path to the input image')
+# parser.add_argument('--image_path', type=str, default='sample_image.png', required=True, help='Path to the input image')
 # args = parser.parse_args()
 
 transform = transforms.Compose(
@@ -20,7 +17,9 @@ transform = transforms.Compose(
 )
 
 
-def predict(img: Image, model_path="./weights/model_10epochs_240414_164948.pth"):
+def predict(
+    img: Image.Image, model_path="weights/model_10epochs_240414_015643.pth"
+) -> tuple[float, torch.Tensor]:
     # print(img_path)
     # image = Image.open(img_path)
     image = transform(img).unsqueeze(0)

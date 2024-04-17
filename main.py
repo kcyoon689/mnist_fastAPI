@@ -46,12 +46,13 @@ class RegisterRequest(BaseModel):
 
 @app.get("/")
 def root():
-    return {"Hello": "World!"}
+    return JSONResponse(content={"Hello": "World!"}, status_code=200)
 
 
-@app.post("/train/")
-async def train(train_request: TrainRequest):
+@app.post("/train")
+async def post_train(train_request: TrainRequest):
     setup_logging()
+    experiment_id = setup_experiment_tracking()
 
     # 학습 파라미터
     lr = train_request.learning_rate
@@ -79,7 +80,6 @@ async def train(train_request: TrainRequest):
         # 새로운 MLflow 실행 시작
         with mlflow.start_run() as mlflow_run:
             train_loss, val_loss, val_acc = train_model(args, mlflow_run)
-            experiment_id = mlflow_run.info.run_id
 
         # # 학습 과정 시각화
         # plotly_plot_losses(train_loss, val_loss)
@@ -96,11 +96,11 @@ async def train(train_request: TrainRequest):
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@app.post("/register/")
-async def register(register_request: RegisterRequest):
+@app.post("/register")
+async def post_register(register_request: RegisterRequest):
     experiment_id = register_request.experiment_id
     mnist_model_path = register_request.mnist_model_path
     artifact_path = register_request.artifact_path
@@ -143,14 +143,22 @@ def parse_args():
 
 
 @app.post("/predict")
-# define a form with a multipart input, which will be the image in this case.
 async def post_predict(file: UploadFile = File(...)):
-    contents: bytes = await file.read()
-    loaded_image = Image.open(BytesIO(contents))
-    # loaded_image = np.expand_dims(loaded_image, axis=0)
-    prediction, confidence = predict(loaded_image)
-    return {"label": str(prediction), "confidence": str(confidence)}
+    contents = await file.read()
+    try:
+        loaded_image = Image.open(BytesIO(contents))
+        prediction, confidence = predict(loaded_image)
+        return JSONResponse(
+            content={
+                "label": str(prediction),
+                "confidence": str(confidence),
+            },
+            status_code=200,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    args = parse_args()
+    uvicorn.run(app, host=args.host_ip, port=8000)

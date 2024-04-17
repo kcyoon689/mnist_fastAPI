@@ -3,6 +3,7 @@ from datetime import datetime, timezone, timedelta
 import mlflow
 import torch
 from torch.optim.lr_scheduler import OneCycleLR
+from torch.utils.data.dataloader import DataLoader
 from modules.model import MnistModel
 from modules.utils import (
     get_dataloader,
@@ -12,7 +13,15 @@ from modules.utils import (
 )
 
 
-def fit(epochs, lr, model, train_loader, val_loader, device, opt_func=torch.optim.SGD):
+def fit(
+    epochs: int,
+    lr: float,
+    model: torch.nn.Module,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    device: torch.device,
+    opt_func=torch.optim.SGD,
+) -> tuple[list[dict], list[float], list[float], list[float]]:
     torch.cuda.empty_cache()
     history = []
     train_loss = []
@@ -64,7 +73,9 @@ def fit(epochs, lr, model, train_loader, val_loader, device, opt_func=torch.opti
 
 
 @torch.no_grad()
-def evaluate(model, val_loader, device):
+def evaluate(
+    model: torch.nn.Module, val_loader: DataLoader, device: torch.device
+) -> dict[str, float]:
     model.eval()
     # outputs = [model.validation_step(batch.to(device)) for batch in val_loader]
     outputs = [
@@ -74,30 +85,33 @@ def evaluate(model, val_loader, device):
     return model.validation_epoch_end(outputs)
 
 
-def train_model(args_dict: dict):
+def train_model(
+    args_dict: dict[str, int | float], mlflow_run: mlflow.ActiveRun | None = None
+):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader, val_loader, test_loader = get_dataloader(
-        args_dict.get("batch_size"), args_dict.get("val_size")
+        args_dict["batch_size"], args_dict["val_size"]
     )
 
-    if mlflow.active_run():
-        mlflow.end_run()
+    if mlflow_run is not None:
+        print(mlflow_run.to_dictionary())
+    else:
+        mlflow.start_run()
 
     # MLflow 시작
-    mlflow.start_run()
     mlflow.log_params(
         {
-            "learning_rate": args_dict.get("lr"),
-            "batch_size": args_dict.get("batch_size"),
-            "validation_size": args_dict.get("val_size"),
-            "epochs": args_dict.get("n_epochs"),
+            "learning_rate": args_dict["lr"],
+            "batch_size": args_dict["batch_size"],
+            "validation_size": args_dict["val_size"],
+            "epochs": args_dict["n_epochs"],
         }
     )
 
     model_instance = MnistModel().to(device)
     history, train_loss, val_loss, val_acc = fit(
-        args_dict.get("n_epochs"),
-        args_dict.get("lr"),
+        int(args_dict["n_epochs"]),
+        args_dict["lr"],
         model_instance,
         train_loader,
         val_loader,
@@ -123,9 +137,9 @@ def train_model(args_dict: dict):
     makedirs(save_path)
 
     # UTC to KST(UTC+9)
-    kst_time = datetime.datetime.now(timezone.utc) + timedelta(hours=9)
+    kst_time = datetime.now(timezone.utc) + timedelta(hours=9)
     current_time_kst = kst_time.strftime("%y%m%d_%H%M%S")
-    file_name = f"model_{args_dict.get('n_epochs')}epochs_{current_time_kst}.pth"
+    file_name = f"{current_time_kst}_mnist_{args_dict['n_epochs']}epochs.pth"
     torch.save(model_instance.state_dict(), save_path + file_name)
     print(f"'{file_name}' saved!")
 
@@ -151,6 +165,12 @@ def parse_args():
         help="learning rate for training (default: 0.01)",
     )
     parser.add_argument(
+        "--n_epochs",
+        type=int,
+        default=10,
+        help="number of epochs to train (default: 10)",
+    )
+    parser.add_argument(
         "--batch_size",
         type=int,
         default=128,
@@ -162,19 +182,11 @@ def parse_args():
         default=10000,
         help="proportion of dataset to use for validation (default: 0.2)",
     )
-    parser.add_argument(
-        "--n_epochs",
-        type=int,
-        default=10,
-        help="number of epochs to train (default: 10)",
-    )
 
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    args_dict = vars(args)
-    # print(args_dict)
-    train_model(args_dict)
+    # print(args)
+    train_model(vars(args))

@@ -1,4 +1,7 @@
+import logging
+import os
 import torch
+import uuid
 from torchvision.datasets import MNIST
 from torchvision.transforms import ToTensor
 from torchvision import transforms
@@ -6,13 +9,9 @@ from torch.utils.data import random_split
 from torch.utils.data.dataloader import DataLoader
 import plotly.express as px
 import plotly.graph_objects as go
-import os
-import logging
-
-# import uuid
 
 
-def get_dataloader(batch_size, val_size):
+def get_dataloader(batch_size, val_size) -> tuple[DataLoader, DataLoader, DataLoader]:
     dataset = MNIST(root="data", download=True, transform=ToTensor())
 
     train_size = len(dataset) - val_size
@@ -34,8 +33,8 @@ def get_dataloader(batch_size, val_size):
         train_mean += images.mean(2).sum(0)
         train_std += images.std(2).sum(0)
 
-    train_mean /= len(train_loader.dataset)
-    train_std /= len(train_loader.dataset)
+    train_mean /= len(train_loader)
+    train_std /= len(train_loader)
 
     # print('Mean: ', train_mean)
     # print('Std: ', train_std)
@@ -45,7 +44,7 @@ def get_dataloader(batch_size, val_size):
         download=True,
         transform=transforms.Compose(
             [
-                transforms.RandomRotation((-7.0, 7.0), fill=(1,)),
+                transforms.RandomRotation((-7.0, 7.0), fill=1),
                 transforms.ToTensor(),
                 transforms.Normalize((0.1308,), (0.3016,)),
             ]
@@ -78,19 +77,28 @@ def get_dataloader(batch_size, val_size):
     return train_loader, val_loader, test_loader
 
 
-def setup_logging():
+def setup_logging() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
 
-def makedirs(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
+def setup_experiment_tracking() -> str:
+    # 실험 ID를 UUID로 생성
+    experiment_id = str(uuid.uuid4())
+    return experiment_id
+
+
+def makedirs(path) -> None:
+    try:
+        if not os.path.exists(path):
+            os.makedirs(path)
+    except OSError:
+        print("Error: Creating directory of data")
 
 
 # plot_losses_and_accuracy(history)
-def plotly_plot_losses(train_loss, val_loss):
+def plotly_plot_losses(train_loss: list, val_loss: list) -> None:
     train_losses = train_loss
     val_losses = val_loss
 

@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from .trainer import MnistModelBase
 from torchsummary import summary
+from modules.trainer import MnistModelBase
 
 
 class MnistModel(MnistModelBase):
@@ -69,7 +68,7 @@ class MnistModel(MnistModelBase):
             nn.Conv2d(16, 10, 1),  # RF - 20x20  #output- 7x7
         )
 
-    def forward(self, xb):
+    def forward(self, xb: torch.Tensor) -> torch.Tensor:
         x = self.conv1(xb)
         x = self.trans1(x)
         x = self.conv2(x)
