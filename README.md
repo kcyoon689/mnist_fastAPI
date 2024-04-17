@@ -82,7 +82,7 @@ There are two ways to use this project.
 1. Use curl.
 2. Use Swagger API
 
-### use curl
+### Use curl
 
 1. endpoints
      - **/train/**
@@ -118,26 +118,26 @@ There are two ways to use this project.
                 -F 'file=@{img_path};type=image/jpeg'
               ```
 
-## Or the swagger API provided.
+## Use swagger API
 
-1. To use swagger refer to http://localhost:8000/docs
+1. To use swagger refer to [http://localhost:8000/docs]
    where the endpoint parameters are shown and we are able to upload new images and test the api.
 
-* /train/
-     * input_example
+- /train/
+     - input_example
           ![alt text](readme_img/train_input.png)
-     * output_example
+     - output_example
           ![alt text](readme_img/train_output.png)
 
-* /register/
-  * input
+- /register/
+  - input
           ![alt text](readme_img/register_input.png)
-  * output
+  - output
           ![alt text](readme_img/register_output.png)
-* /prediction/
-  * input
+- /prediction/
+  - input
           ![alt text](readme_img/predict_input.png)
-  * output
+  - output
           ![alt text](readme_img/predict_output.png)
 
 ## mlflow
