@@ -1,21 +1,20 @@
-import torch
-from fastapi import FastAPI, HTTPException, File, UploadFile
-from pydantic import BaseModel
-import uvicorn
-from typing import Optional
-from modules.model import MnistModel
-from modules.train import train_model
-from modules.utils import (
-    setup_logging,
-    setup_experiment_tracking,
-    plotly_plot_losses,
-    plotly_plot_scores,
-)
-import mlflow.pytorch
-from modules.prediction import predict
-import numpy as np
-from PIL import Image
+import argparse
 from io import BytesIO
+from typing import Optional
+
+import mlflow
+import uvicorn
+import torch
+from PIL import Image
+from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from modules import (
+    MnistModel,
+    predict,
+    train_model,
+    setup_logging,
+)
 
 app = FastAPI()
 
@@ -53,7 +52,6 @@ def root():
 @app.post("/train/")
 async def train(train_request: TrainRequest):
     setup_logging()
-    experiment_id = setup_experiment_tracking()
 
     # 학습 파라미터
     lr = train_request.learning_rate
@@ -79,19 +77,23 @@ async def train(train_request: TrainRequest):
             mlflow.end_run()
 
         # 새로운 MLflow 실행 시작
-        with mlflow.start_run():
-            train_loss, val_loss, val_acc = train_model(args)
+        with mlflow.start_run() as mlflow_run:
+            train_loss, val_loss, val_acc = train_model(args, mlflow_run)
+            experiment_id = mlflow_run.info.run_id
 
         # # 학습 과정 시각화
         # plotly_plot_losses(train_loss, val_loss)
         # plotly_plot_scores(val_acc)
 
-        return {
-            "experiment_id": experiment_id,
-            "train_loss": train_loss,
-            "val_loss": val_loss,
-            "val_acc": val_acc,
-        }
+        return JSONResponse(
+            content={
+                "experiment_id": experiment_id,
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+                "val_acc": val_acc,
+            },
+            status_code=200,
+        )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -124,12 +126,20 @@ async def register(register_request: RegisterRequest):
                 model_instance, artifact_path, registered_model_name=register_name
             )
 
-        return {"status": "success"}
+        return JSONResponse(content={"status": "success"}, status_code=200)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-# model = load_model("mnist_model.h5")
+def parse_args():
+    parser = argparse.ArgumentParser(description="Train a model on MNIST dataset.")
+    parser.add_argument(
+        "--host_ip",
+        type=str,
+        default="localhost",
+        help="host ip address",
+    )
+    return parser.parse_args()
 
 
 @app.post("/predict")
