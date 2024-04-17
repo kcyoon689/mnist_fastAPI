@@ -1,11 +1,15 @@
 import argparse
-from .model import MnistModel
+from datetime import datetime, timezone, timedelta
+import mlflow
 import torch
 from torch.optim.lr_scheduler import OneCycleLR
-from .utils import get_dataloader, makedirs, plotly_plot_losses, plotly_plot_scores
-import datetime
-from datetime import timezone, timedelta
-import mlflow
+from modules.model import MnistModel
+from modules.utils import (
+    get_dataloader,
+    makedirs,
+    plotly_plot_losses,
+    plotly_plot_scores,
+)
 
 
 def fit(epochs, lr, model, train_loader, val_loader, device, opt_func=torch.optim.SGD):
@@ -42,7 +46,8 @@ def fit(epochs, lr, model, train_loader, val_loader, device, opt_func=torch.opti
         val_loss.append(result["val_loss"])
         val_acc.append(result["val_acc"])
         print(
-            f'Epoch [{epoch+1}/{epochs}], Train Loss: {result["train_loss"]:.4f}, Val Loss: {result["val_loss"]:.4f}, Val Acc: {result["val_acc"]:.4f}'
+            f"Epoch [{epoch+1}/{epochs}], Train Loss: {result['train_loss']:.4f}, "
+            + f"Val Loss: {result['val_loss']:.4f}, Val Acc: {result['val_acc']:.4f}"
         )
 
         # MLflow에 메트릭 로깅

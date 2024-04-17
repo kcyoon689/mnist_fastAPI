@@ -8,7 +8,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import os
 import logging
-import uuid
+
+# import uuid
 
 
 def get_dataloader(batch_size, val_size):
@@ -81,12 +82,6 @@ def setup_logging():
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
     )
-
-
-def setup_experiment_tracking():
-    # 실험 ID를 UUID로 생성
-    experiment_id = str(uuid.uuid4())
-    return experiment_id
 
 
 def makedirs(path):
