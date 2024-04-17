@@ -1,15 +1,25 @@
-requests
-torch
-torchvision
-mlflow
-plotly
-matplotlib
-torchsummary
-kaleido
-mlflow
+black
 fastapi
-uvicorn
-python-multipart
+mlflow
 onnx
 onnxruntime
+plotly
+python-multipart
 setuptools
+torch
+torchvision
+torchsummary
+uvicorn
+
+# hydra-core
+# omegaconf
+lightning
+psutil
+
+# hydra-core==1.2.0
+# lightning_bolts==0.5.0
+# omegaconf==2.2.2
+# pytorch_lightning==1.6.4
+# torch==1.11.0+cu113
+# torchmetrics==0.9.1
+# torchvision==0.12.0+cu113
