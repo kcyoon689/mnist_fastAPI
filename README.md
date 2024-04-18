@@ -82,6 +82,7 @@ There are two ways to use this project.
 1. Use docker-compose
 2. Use curl
 3. Use Swagger API
+4. insomnia
 
 ### docker-compose
 
@@ -156,6 +157,15 @@ There are two ways to use this project.
           ![alt text](readme_img/predict_input.png)
   - output
           ![alt text](readme_img/predict_output.png)
+
+### insomnia
+
+- /train/
+    ![alt text](readme_img/insomnia-train.png)
+- /register/
+    ![alt text](readme_img/insomnia-register.png)
+- /predict/
+    ![alt text](readme_img/insomnia-predict.png)
 
 ## mlflow
 
