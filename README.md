@@ -86,12 +86,17 @@ There are two ways to use this project.
 ### docker-compose
 
 1. localhost
+
     ```bash
-    $ docker compose -f .devcontainer/docker-compose.yml up
+    $ export IP_ADDRESS=localhost && \
+      compose -f .devcontainer/docker-compose.yml up
     ```
+
 2. setting host IP
+
     ```bash
-    IP_ADDRESS=[USER_IP] docker compose -f .devcontainer/docker-compose.yml up
+    $ export IP_ADDRESS=[USER_IP] && \
+      docker compose -f .devcontainer/docker-compose.yml up
     ```
 
 ### Use curl

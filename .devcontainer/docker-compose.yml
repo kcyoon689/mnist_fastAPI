@@ -17,6 +17,12 @@ services:
         python3 main.py --host ${IP_ADDRESS}
     tty: true
     deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
       resources:
         reservations:
           devices:
