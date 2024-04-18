@@ -120,8 +120,8 @@ async def post_register(register_request: RegisterRequest):
 
 
 @app.post("/predict")
-async def post_predict(file: UploadFile = File(...)):
-    contents = await file.read()
+async def post_predict(image: UploadFile = File(...)):
+    contents = await image.read()
     try:
         upload_image = Image.open(BytesIO(contents))
         image_tensor = MNISTDataModule.predict_transform(upload_image).unsqueeze(0)

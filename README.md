@@ -110,7 +110,7 @@ There are two ways to use this project.
           ```bash
           $ curl -X POST "http://localhost:8000/train/" \
             -H "Content-Type: application/json" \
-            -d '{"learning_rate": 0.001, "epochs": 10, "batch_size": 128, "val_size": 10000}'
+            -d '{"learning_rate": 0.001, "epochs": 10, "batch_size": 128}'
           ```
 
      - /register/
