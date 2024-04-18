@@ -1,4 +1,5 @@
 import csv
+import datetime
 import logging
 import os
 import numpy as np
@@ -8,8 +9,12 @@ import plotly.graph_objects as go
 class Utils:
     @staticmethod
     def setup_logging() -> None:
+        os.makedirs("logs", exist_ok=True)
+        datetime_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         logging.basicConfig(
-            level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+            level=logging.INFO,
+            filename=f"logs/{datetime_str}.log",
+            format="%(asctime)s - %(levelname)s - %(message)s",
         )
 
     @staticmethod
