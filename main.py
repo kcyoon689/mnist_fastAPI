@@ -54,6 +54,8 @@ async def post_train(train_request: TrainRequest):
     if mlflow.active_run():
         mlflow.end_run()
 
+    mlflow.enable_system_metrics_logging()
+
     mlflow.pytorch.autolog()
 
     dm = MNISTDataModule(batch_size)
