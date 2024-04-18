@@ -25,25 +25,22 @@ RUN apt-get -qq update \
 	&& apt-get -qq install -y python3-dev \
 	&& apt-get -qq install -y python3-pip \
 	&& python3 -m pip install --upgrade pip \
-	&& python3 -m pip install --root-user-action=ignore requests
+	&& python3 -m pip install --root-user-action=ignore requests \
     # && python3 -m pip install opencv-python-headless \
-    # && python3 -m pip install torch \
-    # && python3 -m pip install torchvision \
-    # && python3 -m pip install mlflow \
-    # && python3 -m pip install plotly \
-    # && python3 -m pip install matplotlib \
-	# && python3 -m pip install torchsummary \
-    # && python3 -m pip install kaleido \
-	# && python3 -m pip install mlflow \
-	# && python3 -m pip install fastapi \
-	# && python3 -m pip install uvicorn \
-	# && python3 -m pip install python-multipart \
-	# && python3 -m pip install onnx \
-	# && python3 -m pip install onnxruntime \
-	# && python3 -m pip install lightning \
-	# && python3 -m pip install psutil
-
-# RUN export PIP_ROOT_USER_ACTION=ignore
+	&& python3 -m pip install fastapi \
+    && python3 -m pip install kaleido \
+	&& python3 -m pip install lightning \
+    && python3 -m pip install matplotlib \
+	&& python3 -m pip install mlflow \
+	&& python3 -m pip install onnx \
+	&& python3 -m pip install onnxruntime \
+	&& python3 -m pip install python-multipart \
+    && python3 -m pip install plotly \
+	&& python3 -m pip install psutil \
+    && python3 -m pip install torch \
+    && python3 -m pip install torchvision \
+	&& python3 -m pip install torchsummary \
+	&& python3 -m pip install uvicorn
 
 RUN apt-get -qq update \
 	&& apt-get clean \
@@ -52,10 +49,6 @@ RUN apt-get -qq update \
 	&& rm -rf /tmp/*
 
 USER ${USER_NAME}
-
-# git
-# RUN apt-get -qq install -y git
-# RUN git config --global pager.branch false
 
 # shell
 RUN sudo apt-get -qq update \

@@ -79,8 +79,20 @@ This API service is designed to streamline the training, registration, and predi
 
 There are two ways to use this project.
 
-1. Use curl
-2. Use Swagger API
+1. Use docker-compose
+2. Use curl
+3. Use Swagger API
+
+### docker-compose
+
+1. localhost
+    ```bash
+    $ docker compose -f .devcontainer/docker-compose.yml up
+    ```
+2. setting host IP
+    ```bash
+    IP_ADDRESS=[USER_IP] docker compose -f .devcontainer/docker-compose.yml up
+    ```
 
 ### Use curl
 

@@ -1,0 +1,43 @@
+version: "3.8"
+services:
+  mediwhale:
+    image: yoon689/private:latest
+    # build: .
+    ipc: host
+    network_mode: host
+    volumes:
+      - ..:/workspace/mnist_fastAPI
+    environment:
+      - IP_ADDRESS=localhost
+    command:
+      - /bin/bash
+      - -c
+      - |
+        cd /workspace/mnist_fastAPI
+        python3 main.py --host ${IP_ADDRESS}
+    tty: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  mlflow:
+    image: yoon689/private:latest
+    # build: .
+    ipc: host
+    network_mode: host
+    volumes:
+      - ..:/workspace/mnist_fastAPI
+    environment:
+      - IP_ADDRESS=localhost
+    command:
+      - /bin/bash
+      - -c
+      - |
+        cd /workspace/mnist_fastAPI
+        mlflow ui -h ${IP_ADDRESS}
+    depends_on:
+      - mediwhale
