@@ -46,9 +46,9 @@ async def post_train(train_request: TrainRequest):
     batch_size = train_request.batch_size
     # other_params = train_request.other_hyperparameters or {}
 
-    if max_epochs > 100:
+    if max_epochs > 15:
         return HTTPException(
-            status_code=500, detail="Exceeding max_epoch, set epoch to 100 or less"
+            status_code=500, detail="Exceeding max_epoch, set epoch to 15 or less"
         )
 
     if mlflow.active_run():
