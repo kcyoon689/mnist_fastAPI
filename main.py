@@ -161,12 +161,29 @@ def parse_args() -> argparse.Namespace:
         default="localhost",
         help="host ip address",
     )
+
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="port number",
+    )
+
+    parser.add_argument(
+        "--ml_port",
+        type=int,
+        default=5001,
+        help="port number",
+    )
+
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    mlflow_tracking_uri = f"http://{args.host_ip}:5000"
+
+    mlflow_tracking_uri = f"http://{args.host_ip}:{args.ml_port}"
     mlflow.set_tracking_uri(mlflow_tracking_uri)
     print(f"MLflow Tracking URI set to: {mlflow_tracking_uri}")
-    uvicorn.run(app, host=args.host_ip, port=8000)
+
+    uvicorn.run(app, host=args.host_ip, port=args.port)
