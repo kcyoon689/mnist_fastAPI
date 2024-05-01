@@ -124,7 +124,7 @@ async def post_predict(image: UploadFile = File(...)):
     contents = await image.read()
     try:
         upload_image = Image.open(BytesIO(contents))
-        image_tensor = MNISTDataModule.predict_transform(upload_image).unsqueeze(0)
+        image_tensor = MNISTDataModule.predict_transform(upload_image).unsqueeze(0)  # type: ignore
 
         client = mlflow.MlflowClient()
         for rm in client.search_registered_models():
@@ -166,4 +166,7 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
     args = parse_args()
+    mlflow_tracking_uri = f"http://{args.host_ip}:5000"
+    mlflow.set_tracking_uri(mlflow_tracking_uri)
+    print(f"MLflow Tracking URI set to: {mlflow_tracking_uri}")
     uvicorn.run(app, host=args.host_ip, port=8000)

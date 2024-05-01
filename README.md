@@ -90,7 +90,7 @@ There are two ways to use this project.
 
     ```bash
     $ export IP_ADDRESS=localhost && \
-      compose -f .devcontainer/docker-compose.yml up
+      docker compose -f .devcontainer/docker-compose.yml up
     ```
 
 2. setting host IP
@@ -170,7 +170,7 @@ There are two ways to use this project.
 ## mlflow
 
 ```bash
-$ mlflow ui -p 5000 -h [HOST_IP]
+$ mlflow server -p 5000 -h [HOST_IP]
 ```
 
 ## Reference
