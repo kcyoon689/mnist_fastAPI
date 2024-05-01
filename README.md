@@ -191,6 +191,7 @@ $ mlflow server -p 5000 -h [HOST_IP]
   - [https://github.com/woodywarhol9/hydra-practice](https://github.com/woodywarhol9/hydra-practice)
 
 - lightning:
+  - [https://wikidocs.net/157586](https://wikidocs.net/157586)
   - [https://velog.io/@rapidrabbit76/pytorch-lightning-hooks](https://velog.io/@rapidrabbit76/pytorch-lightning-hooks)
   - [https://baeseongsu.github.io/posts/pytorch-lightning-introduction/](https://baeseongsu.github.io/posts/pytorch-lightning-introduction/)
   - [https://lightning.ai/docs/pytorch/stable/deploy/production_advanced.html](https://lightning.ai/docs/pytorch/stable/deploy/production_advanced.html)
