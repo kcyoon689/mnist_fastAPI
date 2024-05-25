@@ -7,6 +7,10 @@
 		"dockerfile": "Dockerfile"
 	},
 
+	"runArgs": [
+		"--network=host"
+		// "--privileged"
+],
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 

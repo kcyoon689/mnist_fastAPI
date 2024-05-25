@@ -14,7 +14,9 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from modules import MNISTDataModule, MNISTModel, Utils
 
+
 app = FastAPI()
+mlflow.set_tracking_uri(f"http://localhost:5000")
 
 
 class TrainRequest(BaseModel):
@@ -124,7 +126,7 @@ async def post_predict(file: UploadFile = File(...)):
     contents = await file.read()
     try:
         upload_image = Image.open(BytesIO(contents))
-        image_tensor = MNISTDataModule.predict_transform(upload_image).unsqueeze(0)
+        image_tensor = MNISTDataModule.predict_transform(upload_image).unsqueeze(0)  # type: ignore
 
         client = mlflow.MlflowClient()
         for rm in client.search_registered_models():

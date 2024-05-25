@@ -37,11 +37,11 @@ This API service is designed to streamline the training, registration, and predi
 
 ### Endpoints Overview
 
-| Endpoint | Method | Input               | Output                                               |
-|----------|--------|---------------------|------------------------------------------------------|
+| Endpoint | Method | Input                  | Output                                         |
+| -------- | ------ | ---------------------- | ---------------------------------------------- |
 | Train    | POST   | hyperparameters (json) | model ID, and experiment tracking information. |
-| Register | POST   | model ID,artifact ID          | register ID |
-| Predict  | POST   | image         | predicted digit and confidence score. |
+| Register | POST   | model ID,artifact ID   | register ID                                    |
+| Predict  | POST   | image                  | predicted digit and confidence score.          |
 
 ## Installation
 
@@ -89,7 +89,7 @@ There are two ways to use this project.
 
     ```bash
     $ export IP_ADDRESS=localhost && \
-      compose -f .devcontainer/docker-compose.yml up
+      docker compose -f .devcontainer/docker-compose.yml up
     ```
 
 2. setting host IP

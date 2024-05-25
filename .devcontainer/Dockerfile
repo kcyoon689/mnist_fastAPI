@@ -12,8 +12,8 @@ RUN groupadd --gid ${USER_GID} ${USER_NAME} \
 	&& useradd --uid ${USER_UID} --gid ${USER_GID} -m ${USER_NAME} \
 	&& apt-get -qq update \
 	&& apt-get -qq install -y sudo \
-    && apt-get -qq install -y git \
-    && apt-get -qq install -y wget \
+	&& apt-get -qq install -y git \
+	&& apt-get -qq install -y wget \
 	&& apt-get -qq install -y curl \
 	&& apt-get -qq install -y net-tools \
 	&& echo ${USER_NAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USER_NAME} \
@@ -26,19 +26,19 @@ RUN apt-get -qq update \
 	&& apt-get -qq install -y python3-pip \
 	&& python3 -m pip install --upgrade pip \
 	&& python3 -m pip install --root-user-action=ignore requests \
-    # && python3 -m pip install opencv-python-headless \
+	# && python3 -m pip install opencv-python-headless \
 	&& python3 -m pip install fastapi \
-    && python3 -m pip install kaleido \
+	&& python3 -m pip install kaleido \
 	&& python3 -m pip install lightning \
-    && python3 -m pip install matplotlib \
+	&& python3 -m pip install matplotlib \
 	&& python3 -m pip install mlflow \
 	&& python3 -m pip install onnx \
 	&& python3 -m pip install onnxruntime \
 	&& python3 -m pip install python-multipart \
-    && python3 -m pip install plotly \
+	&& python3 -m pip install plotly \
 	&& python3 -m pip install psutil \
-    && python3 -m pip install torch \
-    && python3 -m pip install torchvision \
+	&& python3 -m pip install torch==2.2.2+cu121 \
+	&& python3 -m pip install torchvision \
 	&& python3 -m pip install torchsummary \
 	&& python3 -m pip install uvicorn
 
