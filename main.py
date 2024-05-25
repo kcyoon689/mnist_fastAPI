@@ -172,7 +172,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--ml_port",
         type=int,
-        default=5001,
+        default=5000,
         help="port number",
     )
 

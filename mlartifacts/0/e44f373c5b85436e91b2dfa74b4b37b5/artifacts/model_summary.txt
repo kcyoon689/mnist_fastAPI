@@ -1,0 +1,14 @@
+  | Name    | Type       | Params | In sizes         | Out sizes 
+-----------------------------------------------------------------------
+0 | model   | Sequential | 269 K  | [256, 1, 28, 28] | [256, 10] 
+1 | model.0 | Flatten    | 0      | [256, 1, 28, 28] | [256, 784]
+2 | model.1 | Linear     | 200 K  | [256, 784]       | [256, 256]
+3 | model.2 | ReLU       | 0      | [256, 256]       | [256, 256]
+4 | model.3 | Linear     | 65.8 K | [256, 256]       | [256, 256]
+5 | model.4 | ReLU       | 0      | [256, 256]       | [256, 256]
+6 | model.5 | Linear     | 2.6 K  | [256, 256]       | [256, 10] 
+-----------------------------------------------------------------------
+269 K     Trainable params
+0         Non-trainable params
+269 K     Total params
+1.077     Total estimated model params size (MB)
